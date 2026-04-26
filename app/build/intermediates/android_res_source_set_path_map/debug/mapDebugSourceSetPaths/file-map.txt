@@ -1,0 +1,6 @@
+com.example.notes.app-updated_navigation_xml-0 D:\notes\app\build\generated\updated_navigation_xml\debug
+com.example.notes.app-packageDebugResources-1 D:\notes\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.notes.app-packageDebugResources-2 D:\notes\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.notes.app-debug-3 D:\notes\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.example.notes.app-debug-4 D:\notes\app\src\debug\res
+com.example.notes.app-main-5 D:\notes\app\src\main\res

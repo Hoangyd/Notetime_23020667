@@ -1,0 +1,4 @@
+com.example.notes.test.app-updated_navigation_xml-0 D:\notes\app\build\generated\updated_navigation_xml\debugAndroidTest
+com.example.notes.test.app-packageDebugAndroidTestResources-1 D:\notes\app\build\intermediates\incremental\debugAndroidTest\packageDebugAndroidTestResources\merged.dir
+com.example.notes.test.app-packageDebugAndroidTestResources-2 D:\notes\app\build\intermediates\incremental\debugAndroidTest\packageDebugAndroidTestResources\stripped.dir
+com.example.notes.test.app-debugAndroidTest-3 D:\notes\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources
