@@ -7,7 +7,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.example.notes.domain.Category
-import com.example.notes.domain.EventType
 import com.example.notes.domain.Priority
 
 @Entity(
@@ -76,7 +75,6 @@ data class TaskWithSubtasks(
 data class EventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val title: String,
-    val type: String = EventType.OTHER.name,
     val category: String = Category.PERSONAL.name,
     /** ARGB colour override; 0 = use the category colour. */
     val color: Int = 0,
@@ -93,7 +91,6 @@ data class EventEntity(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
-val EventEntity.typeEnum: EventType get() = EventType.fromKey(type)
 val EventEntity.categoryEnum: Category get() = Category.fromKey(category)
 
 @Entity(tableName = "habits")

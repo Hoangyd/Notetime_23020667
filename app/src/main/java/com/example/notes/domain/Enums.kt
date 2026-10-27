@@ -16,14 +16,6 @@ enum class Priority(val level: Int) {
     }
 }
 
-enum class EventType {
-    CLASS, WORK, APPOINTMENT, OTHER;
-
-    companion object {
-        fun fromKey(key: String?): EventType = entries.firstOrNull { it.name == key } ?: OTHER
-    }
-}
-
 /** Task list filters. [mode] is the value understood by the SQL query in TaskDao. */
 enum class TaskFilter(val mode: Int) {
     ALL(0), TODAY(1), UPCOMING(2), OVERDUE(3), COMPLETED(4)

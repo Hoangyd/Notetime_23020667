@@ -18,7 +18,7 @@ import androidx.room.migration.Migration
         HabitLogEntity::class,
         TimeLogEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class NotesDatabase : RoomDatabase() {
@@ -125,6 +125,34 @@ abstract class NotesDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Removes the unused event `type` column. The table is rebuilt (instead of ALTER ... DROP COLUMN,
+         * which older SQLite versions on Android do not support) and every existing event is copied over.
+         */
+        val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `events_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`title` TEXT NOT NULL, `category` TEXT NOT NULL, " +
+                        "`color` INTEGER NOT NULL, `startAt` INTEGER NOT NULL, `endAt` INTEGER NOT NULL, " +
+                        "`allDay` INTEGER NOT NULL, `location` TEXT NOT NULL, `description` TEXT NOT NULL, " +
+                        "`repeatDaysMask` INTEGER NOT NULL, `repeatUntil` INTEGER, " +
+                        "`createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "INSERT INTO `events_new` (`id`, `title`, `category`, `color`, `startAt`, `endAt`, `allDay`, " +
+                        "`location`, `description`, `repeatDaysMask`, `repeatUntil`, `createdAt`, `updatedAt`) " +
+                        "SELECT `id`, `title`, `category`, `color`, `startAt`, `endAt`, `allDay`, " +
+                        "`location`, `description`, `repeatDaysMask`, `repeatUntil`, `createdAt`, `updatedAt` " +
+                        "FROM `events`"
+                )
+                db.execSQL("DROP TABLE `events`")
+                db.execSQL("ALTER TABLE `events_new` RENAME TO `events`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_events_startAt` ON `events` (`startAt`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_events_endAt` ON `events` (`endAt`)")
+            }
+        }
+
         fun getDatabase(context: Context): NotesDatabase {
             return instance ?: synchronized(this) {
                 val database = Room.databaseBuilder(
@@ -132,7 +160,7 @@ abstract class NotesDatabase : RoomDatabase() {
                     NotesDatabase::class.java,
                     "notes.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 instance = database
                 database

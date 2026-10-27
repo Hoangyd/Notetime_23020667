@@ -38,14 +38,14 @@ class NotesMigrationTest {
     }
 
     @Test
-    fun migrate1To4_keepsOldNotesAndAddsNewColumnsAndTables() {
+    fun migrate1To5_keepsOldNotesAndAddsNewColumnsAndTables() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val dbName = "migration-test.db"
         val dbPath = createVersion1Db(context, dbName)
 
         // Opening through Room also validates the migrated schema against the entities.
         val migratedRoomDatabase = Room.databaseBuilder(context, NotesDatabase::class.java, dbName)
-            .addMigrations(NotesDatabase.MIGRATION_1_2, NotesDatabase.MIGRATION_2_3, NotesDatabase.MIGRATION_3_4)
+            .addMigrations(NotesDatabase.MIGRATION_1_2, NotesDatabase.MIGRATION_2_3, NotesDatabase.MIGRATION_3_4, NotesDatabase.MIGRATION_4_5)
             .build()
         migratedRoomDatabase.openHelper.writableDatabase.close()
         migratedRoomDatabase.close()

@@ -1,10 +1,7 @@
 ﻿package com.example.notes.ui.theme
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.FitnessCenter
-import androidx.compose.material.icons.rounded.Groups
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Work
@@ -12,10 +9,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.notes.data.TimeBlock
 import com.example.notes.domain.Category
-import com.example.notes.domain.EventType
 import com.example.notes.domain.Priority
 
-// Các enum (Category, Priority, EventType) nằm ở tầng domain nên không biết gì về màu hay chữ hiển thị.
+// Các enum (Category, Priority) nằm ở tầng domain nên không biết gì về màu hay chữ hiển thị.
 // File này thêm "thuộc tính mở rộng" (extension property) để giao diện hỏi được:
 //     category.color   category.label   category.icon
 // Ví dụ: `Category.STUDY.label` trả về "Học tập".
@@ -60,24 +56,6 @@ val Priority.color: Color
         Priority.LOW -> PriorityLow
         Priority.MEDIUM -> PriorityMedium
         Priority.HIGH -> PriorityHigh
-    }
-
-// ----- Loại lịch -----
-
-val EventType.label: String
-    get() = when (this) {
-        EventType.CLASS -> "Lịch học"
-        EventType.WORK -> "Lịch làm"
-        EventType.APPOINTMENT -> "Cuộc hẹn"
-        EventType.OTHER -> "Khác"
-    }
-
-val EventType.icon: ImageVector
-    get() = when (this) {
-        EventType.CLASS -> Icons.AutoMirrored.Rounded.MenuBook
-        EventType.WORK -> Icons.Rounded.Work
-        EventType.APPOINTMENT -> Icons.Rounded.Groups
-        EventType.OTHER -> Icons.Rounded.Event
     }
 
 /**

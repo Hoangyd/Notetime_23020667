@@ -36,9 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.notes.data.EventEntity
 import com.example.notes.data.categoryEnum
-import com.example.notes.data.typeEnum
 import com.example.notes.domain.Category
-import com.example.notes.domain.EventType
 import com.example.notes.domain.TimeUtils
 import com.example.notes.ui.components.DateField
 import com.example.notes.ui.components.TimeField
@@ -72,7 +70,6 @@ fun EventEditorSheet(
 
     // ----- Giá trị các ô trong form -----
     var title by remember { mutableStateOf(initial.title) }
-    var type by remember { mutableStateOf(initial.typeEnum) }
     var category by remember { mutableStateOf(initial.categoryEnum) }
     var allDay by remember { mutableStateOf(initial.allDay) }
     var day by remember { mutableStateOf(TimeUtils.epochDay(initial.startAt)) }
@@ -103,7 +100,6 @@ fun EventEditorSheet(
         onSave(
             initial.copy(
                 title = title.trim(),
-                type = type.name,
                 category = category.name,
                 allDay = allDay,
                 startAt = if (allDay) TimeUtils.dayStart(day) else TimeUtils.at(day, startMinutes),
@@ -151,17 +147,7 @@ fun EventEditorSheet(
                 shape = RoundedCornerShape(14.dp)
             )
 
-            // Chọn loại lịch và danh mục
-            ChipRow {
-                for (option in EventType.entries) {
-                    FilterChip(
-                        selected = type == option,
-                        onClick = { type = option },
-                        label = { Text(option.label) },
-                        leadingIcon = { Icon(option.icon, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    )
-                }
-            }
+            // Chọn danh mục (quyết định màu của khối lịch)
             ChipRow {
                 for (option in Category.entries) {
                     FilterChip(

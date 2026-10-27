@@ -181,7 +181,7 @@ class PlannerRepositoryTest {
         calendar.saveEvent(
             EventEntity(
                 title = "Physics",
-                type = "CLASS",
+                category = "STUDY",
                 startAt = TimeUtils.dayStart(monday) + 8 * hour,
                 endAt = TimeUtils.dayStart(monday) + 9 * hour,
                 repeatDaysMask = 0b0010101 // Mon, Wed, Fri

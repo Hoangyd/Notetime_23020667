@@ -15,7 +15,7 @@ Viết bằng Kotlin, Jetpack Compose (Material 3), Room (SQLite), ViewModel + F
 
 ## Cấu trúc
 
-- `data/` — entity, DAO, repository, `NotesDatabase` (Room, hiện là phiên bản 4, có migration 1→2→3→4)
+- `data/` — entity, DAO, repository, `NotesDatabase` (Room, hiện là phiên bản 5, có migration 1→2→3→4→5)
   - `Scheduling.kt`: dựng khối thời gian, mở rộng lịch lặp, phát hiện trùng giờ, gợi ý ưu tiên
 - `domain/` — mô hình, enum, `TimeUtils`, tính streak (hàm thuần, có unit test)
 - `ui/` — theme, điều hướng (`nav/`), và từng màn hình (`today`, `calendar`, `tasks`, `notes`, `insights`)
