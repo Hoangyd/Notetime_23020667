@@ -20,58 +20,59 @@ class NoteRepository(
         }
     }
 
-    fun observeCategories(): Flow<List<String>> {
-        return noteDao.observeCategories()
-    }
-
     fun observeNote(noteId: Long): Flow<Note?> {
         return noteDao.observeNoteById(noteId).map { entity ->
             entity?.toDomain()
         }
     }
 
-    suspend fun saveNote(noteId: Long?, title: String, content: String, category: String) {
+    fun observeNotesForTask(taskId: Long): Flow<List<Note>> =
+        noteDao.observeNotesForTask(taskId).map { list -> list.map { it.toDomain() } }
+
+    fun observeNotesForDate(epochDay: Long): Flow<List<Note>> =
+        noteDao.observeNotesForDate(epochDay).map { list -> list.map { it.toDomain() } }
+
+    /** Saves [note] (create when id is 0 or unknown). Returns its id. */
+    suspend fun save(note: Note): Long {
         val now = System.currentTimeMillis()
-        val normalizedCategory = category.trim()
-
-        if (noteId == null) {
-            noteDao.upsert(
-                NoteEntity(
-                    title = title.trim(),
-                    content = content.trim(),
-                    category = normalizedCategory,
-                    isPinned = false,
-                    isArchived = false,
-                    createdAt = now,
-                    updatedAt = now
-                )
-            )
-            return
-        }
-
-        val existing = noteDao.getByIdNow(noteId)
-        val updated = if (existing == null) {
-            NoteEntity(
-                id = noteId,
-                title = title.trim(),
-                content = content.trim(),
-                category = normalizedCategory,
-                isPinned = false,
-                isArchived = false,
-                createdAt = now,
-                updatedAt = now
-            )
-        } else {
-            existing.copy(
-                title = title.trim(),
-                content = content.trim(),
-                category = normalizedCategory,
-                updatedAt = now
-            )
-        }
-
-        noteDao.upsert(updated)
+        val existing = if (note.id > 0) noteDao.getByIdNow(note.id) else null
+        val entity = note.toEntity().copy(
+            id = existing?.id ?: 0L,
+            title = note.title.trim(),
+            content = note.content.trim(),
+            category = note.category.trim(),
+            createdAt = existing?.createdAt ?: now,
+            updatedAt = now
+        )
+        return noteDao.upsert(entity).takeIf { it != UPDATED } ?: entity.id
     }
+
+    /**
+     * Autosave. Creates (or updates) a hidden draft row so a half-written note survives
+     * process death. Call [save] with isDraft = false to publish it.
+     */
+    suspend fun saveDraft(note: Note): Long = save(note.copy(isDraft = true))
+
+    fun observeLatestDraft(): Flow<Note?> = noteDao.observeLatestDraft().map { it?.toDomain() }
+
+    suspend fun getNote(noteId: Long): Note? = noteDao.getByIdNow(noteId)?.toDomain()
+
+    suspend fun getItems(noteId: Long): List<NoteItemEntity> = noteDao.getItemsNow(noteId)
+
+    /** Checklist items of every note, keyed by note id (for list previews). */
+    fun observeAllItems(): Flow<Map<Long, List<NoteItemEntity>>> =
+        noteDao.observeAllItems().map { items -> items.groupBy { it.noteId } }
+
+    /** Replaces the checklist of [noteId] with [items] (positions follow list order). */
+    suspend fun replaceItems(noteId: Long, items: List<NoteItemEntity>) {
+        noteDao.deleteItemsForNote(noteId)
+        noteDao.insertItems(
+            items.filter { it.text.isNotBlank() }
+                .mapIndexed { index, item -> item.copy(id = 0L, noteId = noteId, position = index) }
+        )
+    }
+
+    suspend fun setItemDone(itemId: Long, isDone: Boolean) = noteDao.setItemDone(itemId, isDone)
 
     suspend fun deleteNote(noteId: Long) {
         noteDao.deleteById(noteId)
@@ -88,10 +89,20 @@ class NoteRepository(
     }
 
     suspend fun exportAsJson(): String {
-        val notes = noteDao.getAllNow()
+        val notes = noteDao.getAllNow().filter { !it.isDraft }
+        val itemsByNote = noteDao.getAllItemsNow().groupBy { it.noteId }
         val array = JSONArray()
 
         for (note in notes) {
+            val items = JSONArray()
+            itemsByNote[note.id].orEmpty().forEach { item ->
+                items.put(
+                    JSONObject()
+                        .put("text", item.text)
+                        .put("isDone", item.isDone)
+                        .put("position", item.position)
+                )
+            }
             val item = JSONObject()
                 .put("id", note.id)
                 .put("title", note.title)
@@ -101,6 +112,12 @@ class NoteRepository(
                 .put("isArchived", note.isArchived)
                 .put("createdAt", note.createdAt)
                 .put("updatedAt", note.updatedAt)
+                .put("color", note.color)
+                .put("labels", note.labels)
+                .put("isChecklist", note.isChecklist)
+                .put("linkedTaskId", note.linkedTaskId ?: JSONObject.NULL)
+                .put("linkedDate", note.linkedDate ?: JSONObject.NULL)
+                .put("items", items)
             array.put(item)
         }
 
@@ -110,26 +127,46 @@ class NoteRepository(
     suspend fun importFromJson(payload: String): Int {
         val parsed = JSONArray(payload)
         val now = System.currentTimeMillis()
-        val notes = mutableListOf<NoteEntity>()
+        var imported = 0
 
         for (index in 0 until parsed.length()) {
             val item = parsed.optJSONObject(index) ?: continue
-            notes += NoteEntity(
-                id = item.optLong("id", 0L),
-                title = item.optString("title", ""),
-                content = item.optString("content", ""),
-                category = item.optString("category", ""),
-                isPinned = item.optBoolean("isPinned", false),
-                isArchived = item.optBoolean("isArchived", false),
-                createdAt = item.optLong("createdAt", now),
-                updatedAt = item.optLong("updatedAt", now)
+            val importedId = item.optLong("id", 0L)
+            val rowId = noteDao.upsert(
+                NoteEntity(
+                    id = importedId,
+                    title = item.optString("title", ""),
+                    content = item.optString("content", ""),
+                    category = item.optString("category", ""),
+                    isPinned = item.optBoolean("isPinned", false),
+                    isArchived = item.optBoolean("isArchived", false),
+                    createdAt = item.optLong("createdAt", now),
+                    updatedAt = item.optLong("updatedAt", now),
+                    color = item.optInt("color", 0),
+                    labels = item.optString("labels", ""),
+                    isChecklist = item.optBoolean("isChecklist", false),
+                    linkedTaskId = if (item.isNull("linkedTaskId")) null else item.optLong("linkedTaskId"),
+                    linkedDate = if (item.isNull("linkedDate")) null else item.optLong("linkedDate")
+                )
             )
+            val noteId = rowId.takeIf { it != UPDATED } ?: importedId
+
+            val itemsJson = item.optJSONArray("items")
+            if (itemsJson != null) {
+                val items = (0 until itemsJson.length()).mapNotNull { i ->
+                    val obj = itemsJson.optJSONObject(i) ?: return@mapNotNull null
+                    NoteItemEntity(
+                        noteId = noteId,
+                        text = obj.optString("text", ""),
+                        isDone = obj.optBoolean("isDone", false),
+                        position = obj.optInt("position", i)
+                    )
+                }
+                replaceItems(noteId, items)
+            }
+            imported++
         }
 
-        if (notes.isNotEmpty()) {
-            noteDao.upsertAll(notes)
-        }
-
-        return notes.size
+        return imported
     }
 }

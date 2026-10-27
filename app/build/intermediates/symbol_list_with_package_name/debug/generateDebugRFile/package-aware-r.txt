@@ -1,3 +1,0 @@
-com.example.notes
-string app_name
-style Theme_Notes

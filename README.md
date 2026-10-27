@@ -1,46 +1,29 @@
-# Notes App (Room + Compose)
+# Kế hoạch — Planner (Compose + Room)
 
-Android notes application built with Kotlin, Room (SQLite), ViewModel + coroutines, and Jetpack Compose.
+Ứng dụng Android quản lý thời gian: công việc, lịch, ghi chú, thói quen và thống kê.
+Viết bằng Kotlin, Jetpack Compose (Material 3), Room (SQLite), ViewModel + Flow.
 
-## Features
+## 5 màn hình
 
-- Create, read, update, and delete notes
-- Reactive note list backed by Room Flow observers
-- Search by title/content/category
-- Category filtering
-- Pin and archive actions
-- JSON export/import through Android document picker
-- Database migration example from schema version 1 to 2
-- Persistence tests for DAO behavior and migration
+| Màn hình | Chức năng chính |
+|---|---|
+| **Hôm nay** | Lời chào, vòng tiến độ, gợi ý việc nên làm tiếp, timeline sáng/chiều/tối, việc quá hạn và sắp tới, ghi chú gắn với hôm nay, nút thêm nhanh |
+| **Lịch** | Chế độ ngày / tuần / tháng, khối thời gian, kéo thả (nhấn giữ) để dời, phát hiện trùng giờ, lịch học/làm/hẹn lặp hằng tuần |
+| **Công việc** | Deadline, thời lượng, ưu tiên, danh mục, việc con, lọc (hôm nay/sắp tới/quá hạn/xong), tìm kiếm, vuốt để hoàn thành hoặc xoá (có hoàn tác) |
+| **Ghi chú** | Lưới/danh sách, màu, nhãn, danh mục, ghim, lưu trữ, checklist, liên kết với công việc hoặc ngày, tự lưu nháp, xuất/nhập JSON |
+| **Thống kê** | Thói quen + chuỗi ngày (streak), hoàn thành theo tuần, thời gian theo danh mục, kế hoạch so với thực tế, heatmap hoạt động |
 
-## Tech Stack
+## Cấu trúc
 
-- Room (SQLite) for persistence
-- ViewModel + Kotlin Flow/StateFlow for observable UI state
-- Jetpack Compose for UI
-- Navigation Compose for routing
+- `data/` — entity, DAO, repository, `NotesDatabase` (Room, hiện là phiên bản 4, có migration 1→2→3→4)
+  - `Scheduling.kt`: dựng khối thời gian, mở rộng lịch lặp, phát hiện trùng giờ, gợi ý ưu tiên
+- `domain/` — mô hình, enum, `TimeUtils`, tính streak (hàm thuần, có unit test)
+- `ui/` — theme, điều hướng (`nav/`), và từng màn hình (`today`, `calendar`, `tasks`, `notes`, `insights`)
 
-## Project Structure
+## Chạy và kiểm thử
 
-- `app/src/main/java/com/example/notes/data`: Entity, DAO, repository, database, migration
-- `app/src/main/java/com/example/notes/ui`: ViewModel, navigation, Compose screens, theme
-- `app/src/androidTest/java/com/example/notes/data`: Persistence and migration tests
+1. Mở bằng Android Studio, cài Android SDK, build và chạy trên máy ảo hoặc thiết bị.
+2. Unit test (logic thuần): `./gradlew testDebugUnitTest`
+3. Test trên thiết bị (DAO, repository, migration): `./gradlew connectedDebugAndroidTest`
 
-## Run
-
-1. Open the project in Android Studio (or VS Code with Android tooling).
-2. Ensure Android SDK and build tools are installed.
-3. Build and run on an emulator/device.
-
-## Test
-
-- Instrumented persistence tests:
-  - `./gradlew connectedAndroidTest`
-
-## Migration
-
-- Database version is `2` in `NotesDatabase`.
-- `MIGRATION_1_2` adds:
-  - `category` TEXT NOT NULL DEFAULT `''`
-  - `isPinned` INTEGER NOT NULL DEFAULT `0`
-  - `isArchived` INTEGER NOT NULL DEFAULT `0`
+Ngày được lưu dưới dạng epoch-day theo múi giờ của máy, thời điểm lưu dạng epoch millis.
